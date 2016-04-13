@@ -89,8 +89,7 @@ class auth_plugin_authskautis extends auth_plugin_authplain {
 
             $skautisAppId = $this->getConf('skautis_app_id');
             $skautIsTestmode = $this->getConf('skautis_test_mode');
-            //$skautIsAllowedAddUser = $this->getConf('skautis_allowed_add_user');
-            $skautIsAllowedAddUser = true;
+            $skautIsAllowedAddUser = $this->getConf('skautis_allowed_add_user');
             $skautIs = SkautIs\skautIs::getInstance($skautisAppId,$skautIsTestmode);
             $skautIs->setLoginData($_POST);
 
@@ -100,14 +99,14 @@ class auth_plugin_authskautis extends auth_plugin_authplain {
                 $userData = $skautIs->user->userDetail();
                 $token = $skautIs->getUser()->getLoginId();
                 $person = $skautIs->org->PersonDetail(array('ID_Login' => $token, 'ID' => $userData->ID_Person));
-                //$roles = $skautIs->user->userRoleAll(array('ID_Login' => $token, 'ID_User' => $userData->ID));
                 $skautisEmail = $person->Email;
                 $skautisUsername = $person->FirstName . ' ' . $person->LastName;
 
+                $login = 'skautis'.$userData->ID;
+                $udata = $this->getUserData($login);
+
                 //create and update user in base
                 if($skautIsAllowedAddUser){
-                    $login = 'skautis'.$userData->ID;
-                    $udata = $this->getUserData($login);
                     if (!$udata) {
                         //default groups
                         $grps = null;
@@ -123,26 +122,32 @@ class auth_plugin_authskautis extends auth_plugin_authplain {
                     }
                 }
 
+                if ($udata['mail'] == $skautisEmail){
+                    //set user info
+                    $USERINFO['pass'] = "";
+                    $USERINFO['name'] = $skautisUsername;
+                    $USERINFO['mail'] = $skautisEmail;
+                    $USERINFO['grps'] = $udata['grps'];
+                    $USERINFO['is_skautis'] = true;
+                    $_SERVER['REMOTE_USER'] = $skautisUsername;
 
-                //set user info
-                $USERINFO['pass'] = "";
-                $USERINFO['name'] = $skautisUsername;
-                $USERINFO['mail'] = $skautisEmail;
-                $USERINFO['grps'] = $udata['grps'];
-                $USERINFO['is_skautis'] = true;
-                $_SERVER['REMOTE_USER'] = $skautisUsername;
+                    //save user info in session
+                    $_SESSION[DOKU_COOKIE]['authskautis']['user'] = $_SERVER['REMOTE_USER'];
+                    $_SESSION[DOKU_COOKIE]['authskautis']['info'] = $USERINFO;
 
-                //save user info in session
-                $_SESSION[DOKU_COOKIE]['authskautis']['user'] = $_SERVER['REMOTE_USER'];
-                $_SESSION[DOKU_COOKIE]['authskautis']['info'] = $USERINFO;
+                    //if login page - redirect to main page
+                    if (isset($_GET['do']) && $_GET['do']=='login'){
+                        header("Location: ".wl('start', '', true));
+                    }
 
-                //if login page - redirect to main page
-                if (isset($_GET['do']) && $_GET['do']=='login'){
-                    header("Location: ".wl('start', '', true));
+                    return true;
+                } else {
+                    msg($this->getLang('nouser'),-1);
+                    $this->logOff();
+                    return false;
                 }
-
-                return true;
             } else {
+                msg($this->getLang('badskautis'),-1);
                 $this->logOff();
                 return false;
             }
