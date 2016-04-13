@@ -13,41 +13,29 @@ define('SKAUTIS_LIBS_DIR', dirname(__FILE__).'/libs/');
 require_once SKAUTIS_LIBS_DIR. 'skautis-minify.php';
 
 global $conf;
+// define cookie and session id, append server port when securecookie is configured
+if (!defined('AUTHSKAUTIS_COOKIE')){
+    define('AUTHSKAUTIS_COOKIE', 'SPGG'.md5(DOKU_REL.(($conf['securecookie'])?$_SERVER['SERVER_PORT']:'')));
+}
 
 class auth_plugin_authskautis extends auth_plugin_authplain {
-
 
     /**
      * Constructor.
      */
-    /*public function __construct() {
+    public function __construct() {
         global $config_cascade;
         parent::__construct(); // for compatibility
+        $this->url = Skautis\Config::URL_PRODUCTION . '/Login/?appid=';
+        $this->testUrl = Skautis\Config::URL_TEST . '/Login/?appid=';
 
-        // FIXME intialize your auth system and set success to true, if successful
         $this->success = true;
-        // FIXME set capabilities accordingly
-        /*$this->cando['addUser']     = false; // can Users be created?
-        $this->cando['delUser']     = false; // can Users be deleted?
-        $this->cando['modLogin']    = false; // can login names be changed?
-        $this->cando['modPass']     = false; // can passwords be changed?
-        $this->cando['modName']     = false; // can real names be changed?
-        $this->cando['modMail']     = false; // can emails be changed?
-        $this->cando['modGroups']   = false; // can groups be changed?
-        $this->cando['getUsers']    = false; // can a (filtered) list of users be retrieved?
-        $this->cando['getUserCount']= false; // can the number of users be retrieved?
-        $this->cando['getGroups']   = false; // can a list of available groups be retrieved?*/
-       // $this->cando['external']    = true; // does the module do external auth checking?
-       // $this->cando['logout']      = true; // can the user logout again? (eg. not possible with HTTP auth)
 
-   // }
+        $this->cando['addUser']     = true; // can Users be created?
+        $this->cando['external']    = true; // does the module do external auth checking?
+        $this->cando['logout']      = true; // can the user logout again? (eg. not possible with HTTP auth)
 
-
-    /**
-     * Log off the current user [ OPTIONAL ]
-     */
-    //public function logOff() {
-    //}
+    }
 
     /**
      * Do all authentication [ OPTIONAL ]
@@ -57,26 +45,115 @@ class auth_plugin_authskautis extends auth_plugin_authplain {
      * @param   bool    $sticky  Cookie should not expire
      * @return  bool             true on successful auth
      */
-    /*public function trustExternal($user, $pass, $sticky = false) {
-        /* some example:
-
+    public function trustExternal($user, $pass, $sticky = false) {
         global $USERINFO;
-        global $conf;
+
+        //get user info in session
+        if (!empty($_SESSION[DOKU_COOKIE]['authskautis']['info'])) {
+            $USERINFO['name'] = $_SESSION[DOKU_COOKIE]['authskautis']['info']['name'];
+            $USERINFO['mail'] = $_SESSION[DOKU_COOKIE]['authskautis']['info']['mail'];
+            $USERINFO['grps'] = $_SESSION[DOKU_COOKIE]['authskautis']['info']['grps'];
+            $USERINFO['is_skautis'] = $_SESSION[DOKU_COOKIE]['authskautis']['info']['is_skautis'];
+            $_SERVER['REMOTE_USER'] = $_SESSION[DOKU_COOKIE]['authskautis']['user'];
+            return true;
+        }
+
+        //get form login info
+        if(!empty($user)){
+            //var_dump($user,$pass);die;
+            if($this->checkPass($user,$pass)){
+                $uinfo  = $this->getUserData($user);
+
+                //set user info
+                $USERINFO['name'] = $uinfo['name'];
+                $USERINFO['mail'] = $uinfo['email'];
+                $USERINFO['grps'] = $uinfo['grps'];
+                $USERINFO['pass'] = $pass;
+
+                //save data in session
+                $_SERVER['REMOTE_USER'] = $uinfo['name'];
+                $_SESSION[DOKU_COOKIE]['authskautis']['user'] = $uinfo['name'];
+                $_SESSION[DOKU_COOKIE]['authskautis']['info'] = $USERINFO;
+
+                return true;
+            }else{
+                //invalid credentials - log off
+                msg($this->getLang('badlogin'),-1);
+                return false;
+            }
+        }
+
+
         //$sticky ? $sticky = true : $sticky = false; //sanity check
+        if (!empty($_POST)){
 
-        // do the checking here
+            $skautisAppId = $this->getConf('skautis_app_id');
+            $skautIsTestmode = $this->getConf('skautis_test_mode');
+            //$skautIsAllowedAddUser = $this->getConf('skautis_allowed_add_user');
+            $skautIsAllowedAddUser = true;
+            $skautIs = SkautIs\skautIs::getInstance($skautisAppId,$skautIsTestmode);
+            $skautIs->setLoginData($_POST);
 
-        // set the globals if authed
-        $USERINFO['name'] = 'alex';
-        $USERINFO['mail'] = 'alex@skaut.cz';
-        //$USERINFO['grps'] = array('FIXME');
-        $USERINFO['grps'] = array('admin');
-        $_SERVER['REMOTE_USER'] = $user;
-        //$_SESSION[DOKU_COOKIE]['auth']['user'] = $user;
-        //$_SESSION[DOKU_COOKIE]['auth']['pass'] = $pass;
-        //$_SESSION[DOKU_COOKIE]['auth']['info'] = $USERINFO;
-        return true;
+            $skautisUser = $skautIs->getUser();
 
-    }*/
+            if ($skautisUser->isLoggedIn(true)) {
+                $userData = $skautIs->user->userDetail();
+                $token = $skautIs->getUser()->getLoginId();
+                $person = $skautIs->org->PersonDetail(array('ID_Login' => $token, 'ID' => $userData->ID_Person));
+                //$roles = $skautIs->user->userRoleAll(array('ID_Login' => $token, 'ID_User' => $userData->ID));
+                $skautisEmail = $person->Email;
+                $skautisUsername = $person->FirstName . ' ' . $person->LastName;
 
+                //create and update user in base
+                if($skautIsAllowedAddUser){
+                    $login = 'skautis'.$userData->ID;
+                    $udata = $this->getUserData($login);
+                    if (!$udata) {
+                        //default groups
+                        $grps = null;
+                        if ($this->getConf('default_groups')){
+                            $grps = explode(' ', $this->getConf('default_groups'));
+                        }
+                        //create user
+                        $this->createUser($login, md5(rand().$login), $skautisUsername, $skautisEmail, $grps);
+                        $udata = $this->getUserData($login);
+                    } elseif ($udata['name'] != $skautisUsername || $udata['email'] != $skautisEmail) {
+                        //update user
+                        $this->modifyUser($login, array('name'=>$skautisUsername, 'email'=>$skautisEmail));
+                    }
+                }
+
+
+                //set user info
+                $USERINFO['pass'] = "";
+                $USERINFO['name'] = $skautisUsername;
+                $USERINFO['mail'] = $skautisEmail;
+                $USERINFO['grps'] = $udata['grps'];
+                $USERINFO['is_skautis'] = true;
+                $_SERVER['REMOTE_USER'] = $skautisUsername;
+
+                //save user info in session
+                $_SESSION[DOKU_COOKIE]['authskautis']['user'] = $_SERVER['REMOTE_USER'];
+                $_SESSION[DOKU_COOKIE]['authskautis']['info'] = $USERINFO;
+
+                //if login page - redirect to main page
+                if (isset($_GET['do']) && $_GET['do']=='login'){
+                    header("Location: ".wl('start', '', true));
+                }
+
+                return true;
+            } else {
+                $this->logOff();
+                return false;
+            }
+        } else {
+            //return false;
+        }
+        return false;
+    }
+
+    function logOff(){
+        unset($_SESSION[DOKU_COOKIE]['authskautis']['user']);
+        unset($_SESSION[DOKU_COOKIE]['authskautis']['info']);
+    }
 }
