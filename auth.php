@@ -122,7 +122,7 @@ class auth_plugin_authskautis extends auth_plugin_authplain {
                     }
                 }
 
-                if ($udata['mail'] == $skautisEmail){
+                if ($udata['login'] == $login){
                     //set user info
                     $USERINFO['pass'] = "";
                     $USERINFO['name'] = $skautisUsername;
