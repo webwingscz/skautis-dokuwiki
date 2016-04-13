@@ -122,7 +122,7 @@ class auth_plugin_authskautis extends auth_plugin_authplain {
                     }
                 }
 
-                if ($udata['login'] == $login){
+                if ($this->isUserValid($login)){
                     //set user info
                     $USERINFO['pass'] = "";
                     $USERINFO['name'] = $skautisUsername;
@@ -160,5 +160,9 @@ class auth_plugin_authskautis extends auth_plugin_authplain {
     function logOff(){
         unset($_SESSION[DOKU_COOKIE]['authskautis']['user']);
         unset($_SESSION[DOKU_COOKIE]['authskautis']['info']);
+    }
+
+    function isUserValid($login){
+        return isset($this->users[$login]) ? true : false;
     }
 }
