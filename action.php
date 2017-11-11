@@ -13,7 +13,7 @@ class action_plugin_authskautis extends DokuWiki_Action_Plugin {
     /**
      * Registers the event handlers.
      */
-    function register(&$controller)
+    function register(Doku_Event_Handler $controller)
     {
         $controller->register_hook('HTML_LOGINFORM_OUTPUT', 'BEFORE',  $this, 'hook_html_loginform_output', array());
         $controller->register_hook('HTML_UPDATEPROFILEFORM_OUTPUT', 'BEFORE', $this, 'hook_updateprofileform_output', array());
@@ -47,8 +47,8 @@ class action_plugin_authskautis extends DokuWiki_Action_Plugin {
      */
     function hook_html_loginform_output(&$event, $param) {
 
-        $this->url = Skautis\Config::URL_PRODUCTION . '/Login/?appid=';
-        $this->testUrl = Skautis\Config::URL_TEST . '/Login/?appid=';
+        $this->url = Skautis\Config::URL_PRODUCTION . 'Login/?appid=';
+        $this->testUrl = Skautis\Config::URL_TEST . 'Login/?appid=';
 
         $skautisAppId = $this->getConf('skautis_app_id');
         if($skautisAppId!=''){
