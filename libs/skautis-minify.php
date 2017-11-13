@@ -3,18 +3,18 @@
 namespace Skautis\Wsdl;use Skautis\EventDispatcher\EventDispatcherInterface;interface WebServiceInterface extends EventDispatcherInterface
 {
 /**
- * Zavola funkci na Skautisu
+ * Zavola funkci na skautISu
  *
- * @param string $functionName Jmeno funkce volane na skautisu
- * @param array$argumentsArgumenty funkce volane na skautisu
+ * @param string $functionName Jmeno funkce volane na skautISu
+ * @param array$argumentsArgumenty funkce volane na skautISu
  *
  * @return mixed
  */
 public function call($functionName, array $arguments = []);/**
  * Zavola funkci na Skautisu
  *
- * @param string $functionName Jmeno funkce volane na skautisu
- * @param array$argumentsArgumenty funkce volane na skautisu
+ * @param string $functionName Jmeno funkce volane na skautISu
+ * @param array$argumentsArgumenty funkce volane na skautISu
  *
  * @return mixed
  */
@@ -38,7 +38,7 @@ const CACHE_ENABLED = true;const CACHE_DISABLED = false;const TESTMODE_ENABLED =
  * @var string
  */
 private $appId;/**
- * Používat testovací SkautIS?
+ * Používat testovací skautIS?
  *
  * @var bool
  */
@@ -54,7 +54,7 @@ private $compression;/**
  */
 protected $cache;/**
  * @param string $appId Id aplikace od správce skautISu
- * @param bool $isTestMode používat testovací SkautIS?
+ * @param bool $isTestMode používat testovací skautIS?
  * @param bool $cache použít kompresi?
  * @param bool $compression cachovat WDSL?
  * @throws InvalidArgumentException
