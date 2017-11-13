@@ -9,14 +9,15 @@
 
 // must be run within Dokuwiki
 if(!defined('DOKU_INC')) die();
-define('SKAUTIS_LIBS_DIR', dirname(__FILE__).'/libs/');
-require_once SKAUTIS_LIBS_DIR. 'skautis-minify.php';
+
+require_once 'vendor/autoload.php';
 
 global $conf;
 // define cookie and session id, append server port when securecookie is configured
 if (!defined('AUTHSKAUTIS_COOKIE')){
     define('AUTHSKAUTIS_COOKIE', 'SPGG'.md5(DOKU_REL.(($conf['securecookie'])?$_SERVER['SERVER_PORT']:'')));
 }
+
 
 class auth_plugin_authskautis extends auth_plugin_authplain {
 
@@ -34,7 +35,6 @@ class auth_plugin_authskautis extends auth_plugin_authplain {
         $this->cando['addUser']     = true; // can Users be created?
         $this->cando['external']    = true; // does the module do external auth checking?
         $this->cando['logout']      = true; // can the user logout again? (eg. not possible with HTTP auth)
-
     }
 
     /**
@@ -83,24 +83,23 @@ class auth_plugin_authskautis extends auth_plugin_authplain {
             }
         }
 
-
         //$sticky ? $sticky = true : $sticky = false; //sanity check
         if (!empty($_POST)){
 
-            $skautisAppId = $this->getConf('skautis_app_id');
+            $skautIsAppId = $this->getConf('skautis_app_id');
             $skautIsTestmode = $this->getConf('skautis_test_mode');
             $skautIsAllowedAddUser = $this->getConf('skautis_allowed_add_user');
-            $skautIs = SkautIs\skautIs::getInstance($skautisAppId,$skautIsTestmode);
+            $skautIs = Skautis\Skautis::getInstance($skautIsAppId,$skautIsTestmode);
             $skautIs->setLoginData($_POST);
 
-            $skautisUser = $skautIs->getUser();
+            $skautIsUser = $skautIs->getUser();
 
-            if ($skautisUser->isLoggedIn(true)) {
+            if ($skautIsUser->isLoggedIn(true)) {
                 $userData = $skautIs->user->userDetail();
                 $token = $skautIs->getUser()->getLoginId();
-                $person = $skautIs->org->PersonDetail(array('ID_Login' => $token, 'ID' => $userData->ID_Person));
-                $skautisEmail = $person->Email;
-                $skautisUsername = $person->FirstName . ' ' . $person->LastName;
+                $person = $skautIs->org->PersonDetail(['ID_Login' => $token, 'ID' => $userData->ID_Person]);
+                $skautIsEmail = $person->Email;
+                $skautIsUsername = $person->FirstName . ' ' . $person->LastName;
 
                 $login = 'skautis'.$userData->ID;
                 $udata = $this->getUserData($login);
@@ -114,22 +113,22 @@ class auth_plugin_authskautis extends auth_plugin_authplain {
                             $grps = explode(' ', $this->getConf('default_groups'));
                         }
                         //create user
-                        $this->createUser($login, md5(rand().$login), $skautisUsername, $skautisEmail, $grps);
+                        $this->createUser($login, md5(rand().$login), $skautIsUsername, $skautIsEmail, $grps);
                         $udata = $this->getUserData($login);
-                    } elseif ($udata['name'] != $skautisUsername || $udata['email'] != $skautisEmail) {
+                    } elseif ($udata['name'] != $skautIsUsername || $udata['email'] != $skautIsEmail) {
                         //update user
-                        $this->modifyUser($login, array('name'=>$skautisUsername, 'email'=>$skautisEmail));
+                        $this->modifyUser($login, ['name'=>$skautIsUsername, 'email'=>$skautIsEmail]);
                     }
                 }
 
                 if ($this->isUserValid($login)){
                     //set user info
                     $USERINFO['pass'] = "";
-                    $USERINFO['name'] = $skautisUsername;
-                    $USERINFO['mail'] = $skautisEmail;
+                    $USERINFO['name'] = $skautIsUsername;
+                    $USERINFO['mail'] = $skautIsEmail;
                     $USERINFO['grps'] = $udata['grps'];
                     $USERINFO['is_skautis'] = true;
-                    $_SERVER['REMOTE_USER'] = $skautisUsername;
+                    $_SERVER['REMOTE_USER'] = $skautIsUsername;
 
                     //save user info in session
                     $_SESSION[DOKU_COOKIE]['authskautis']['user'] = $_SERVER['REMOTE_USER'];
