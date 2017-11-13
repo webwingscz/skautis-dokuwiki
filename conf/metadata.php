@@ -1,6 +1,6 @@
 <?php
 /**
- * Options for the skautis plugin
+ * Options for the skautIS plugin
  *
  * @author Jiri Dorazil <juradee@gmail.com>
  */
