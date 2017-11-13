@@ -11,7 +11,7 @@ namespace Skautis\Wsdl;use Skautis\EventDispatcher\EventDispatcherInterface;inte
  * @return mixed
  */
 public function call($functionName, array $arguments = []);/**
- * Zavola funkci na Skautisu
+ * Zavola funkci na skautISu
  *
  * @param string $functionName Jmeno funkce volane na skautISu
  * @param array$argumentsArgumenty funkce volane na skautISu
