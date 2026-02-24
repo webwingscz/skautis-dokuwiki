@@ -1,7 +1,7 @@
 base   authskautis
 author Jiri Dorazil
 email  alex@skaut.cz
-date   2016-04-12
-name   skautis plugin
-desc   SkautIs authentication plugin for DokuWiki
-url    http://plugins.webwings.cz/dokuwiki/skautis
+date   2026-02-24
+name   SkautIS plugin
+desc   SkautIS authentication plugin for DokuWiki
+url    https://github.com/webwingscz/skautis-dokuwiki/releases
