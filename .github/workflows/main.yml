@@ -1,0 +1,49 @@
+name: Release (build Dokuwiki plugin ZIP)
+
+on:
+  push:
+    tags:
+      - "*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP + Composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer:v2
+
+      - name: Install zip
+        run: sudo apt-get update && sudo apt-get install -y zip rsync
+
+      - name: Cache Composer downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.composer/cache
+            ~/.cache/composer
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Build ZIP
+        run: |
+          chmod +x tools/build.sh
+          tools/build.sh "${GITHUB_REF_NAME}"
+
+      - name: Create GitHub Release + upload asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
