@@ -47,14 +47,15 @@ class auth_plugin_authskautis extends auth_plugin_authplain {
      */
     public function trustExternal($user, $pass, $sticky = false) {
         global $USERINFO;
+        global $INPUT;
 
         //get user info in session
         if (!empty($_SESSION[DOKU_COOKIE]['authskautis']['info'])) {
             $USERINFO['name'] = $_SESSION[DOKU_COOKIE]['authskautis']['info']['name'];
             $USERINFO['mail'] = $_SESSION[DOKU_COOKIE]['authskautis']['info']['mail'];
             $USERINFO['grps'] = $_SESSION[DOKU_COOKIE]['authskautis']['info']['grps'];
-            $USERINFO['is_skautis'] = $_SESSION[DOKU_COOKIE]['authskautis']['info']['is_skautis'];
-            $_SERVER['REMOTE_USER'] = $_SESSION[DOKU_COOKIE]['authskautis']['user'];
+            $USERINFO['is_skautis'] = $_SESSION[DOKU_COOKIE]['authskautis']['info']['is_skautis']??null;
+            $INPUT->server->set('REMOTE_USER', $_SESSION[DOKU_COOKIE]['authskautis']['user'] ?? null);
             return true;
         }
 
@@ -71,7 +72,7 @@ class auth_plugin_authskautis extends auth_plugin_authplain {
                 $USERINFO['pass'] = $pass;
 
                 //save data in session
-                $_SERVER['REMOTE_USER'] = $uinfo['name'];
+                $INPUT->server->set('REMOTE_USER', $uinfo['name']);
                 $_SESSION[DOKU_COOKIE]['authskautis']['user'] = $uinfo['name'];
                 $_SESSION[DOKU_COOKIE]['authskautis']['info'] = $USERINFO;
 
@@ -128,14 +129,14 @@ class auth_plugin_authskautis extends auth_plugin_authplain {
                     $USERINFO['mail'] = $skautIsEmail;
                     $USERINFO['grps'] = $udata['grps'];
                     $USERINFO['is_skautis'] = true;
-                    $_SERVER['REMOTE_USER'] = $skautIsUsername;
+                    $INPUT->server->set('REMOTE_USER', $skautIsUsername);
 
                     //save user info in session
-                    $_SESSION[DOKU_COOKIE]['authskautis']['user'] = $_SERVER['REMOTE_USER'];
+                    $_SESSION[DOKU_COOKIE]['authskautis']['user'] = $INPUT->server->str('REMOTE_USER');
                     $_SESSION[DOKU_COOKIE]['authskautis']['info'] = $USERINFO;
 
                     //if login page - redirect to main page
-                    if (isset($_GET['do']) && $_GET['do']=='login'){
+                    if ($INPUT->get->str('do') === 'login'){
                         header("Location: ".wl('start', '', true));
                     }
 
