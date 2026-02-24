@@ -39,8 +39,8 @@ jobs:
 
       - name: Build ZIP
         run: |
-          chmod +x tools/build.sh
-          tools/build.sh "${GITHUB_REF_NAME}"
+          chmod +x tools/release.sh
+          tools/release.sh "${GITHUB_REF_NAME}"
 
       - name: Create GitHub Release + upload asset
         uses: softprops/action-gh-release@v2
