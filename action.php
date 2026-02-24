@@ -15,8 +15,8 @@ class action_plugin_authskautis extends DokuWiki_Action_Plugin {
      */
     function register(Doku_Event_Handler $controller)
     {
-        $controller->register_hook('HTML_LOGINFORM_OUTPUT', 'BEFORE',  $this, 'hook_html_loginform_output', []);
-        $controller->register_hook('HTML_UPDATEPROFILEFORM_OUTPUT', 'BEFORE', $this, 'hook_updateprofileform_output', []);
+        $controller->register_hook('FORM_LOGIN_OUTPUT', 'BEFORE',  $this, 'hook_html_loginform_output', array());
+        $controller->register_hook('HTML_UPDATEPROFILEFORM_OUTPUT', 'BEFORE', $this, 'hook_updateprofileform_output', array());
     }
 
     function hook_updateprofileform_output(&$event, $param) {
